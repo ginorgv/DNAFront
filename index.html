@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Compressor - Compresión Avanzada de FASTAs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-area {
+            border: 3px dashed #bdc3c7;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background: #e8f5e8;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .file-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .github-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #2b3137;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 DNA Compressor</h1>
+            <p>Compresión Avanzada de Archivos FASTA</p>
+            <p><small>Ratios de 7:1 garantizados • Compresión/Descompresión sin pérdidas</small></p>
+        </div>
+
+        <div class="content">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Arrastra tu archivo FASTA aquí</h3>
+                <p>o haz clic para seleccionar</p>
+                <input type="file" id="fileInput" class="file-input" accept=".fasta,.fa,.fna,.dna">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Seleccionar Archivo
+                </button>
+            </div>
+
+            <div class="actions" id="actions" style="display: none;">
+                <button class="btn" onclick="compressFile()" id="compressBtn">
+                    🗜️ Comprimir FASTA
+                </button>
+                <button class="btn btn-success" onclick="decompressFile()" id="decompressBtn">
+                    📤 Descomprimir .dna
+                </button>
+                <button class="btn btn-danger" onclick="resetApp()">
+                    🔄 Limpiar
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p id="loadingText">Procesando archivo...</p>
+            </div>
+
+            <div class="results" id="results">
+                <h3>📊 Resultados de Compresión</h3>
+                <div class="stats" id="stats">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <div class="file-info">
+                    <p id="fileDetails"></p>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+                <button class="btn btn-success" onclick="downloadResult()" id="downloadBtn">
+                    ⬇️ Descargar Resultado
+                </button>
+            </div>
+
+            <div class="github-section">
+                <h3>🔗 Conectado con GitHub</h3>
+                <p>Este compresor usa algoritmos avanzados de compresión de ADN</p>
+                <p><small>Backend desplegado en Render • Frontend en GitHub Pages</small></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración - Cambia esta URL por tu backend en Render
+        const API_BASE_URL = 'https://dnacompresor.onrender.com'; // Reemplazar con tu URL de Render
+        
+        let currentFile = null;
+        let currentResult = null;
+        let isCompressed = false;
+
+        // Elementos DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const actions = document.getElementById('actions');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const stats = document.getElementById('stats');
+        const fileDetails = document.getElementById('fileDetails');
+        const progressBar = document.getElementById('progressBar');
+        const loadingText = document.getElementById('loadingText');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Event Listeners
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            processFile(file);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            processFile(file);
+        }
+
+        function processFile(file) {
+            if (!file) return;
+
+            currentFile = file;
+            isCompressed = file.name.endsWith('.dna');
+            
+            // Mostrar acciones apropiadas
+            actions.style.display = 'block';
+            document.getElementById('compressBtn').style.display = isCompressed ? 'none' : 'inline-block';
+            document.getElementById('decompressBtn').style.display = isCompressed ? 'inline-block' : 'none';
+            
+            // Mostrar info del archivo
+            fileDetails.textContent = `Archivo: ${file.name} (${formatFileSize(file.size)})`;
+        }
+
+        async function compressFile() {
+            if (!currentFile) return;
+            
+            await processWithAPI('/api/compress', 'comprimiendo');
+        }
+
+        async function decompressFile() {
+            if (!currentFile) return;
+            
+            await processWithAPI('/api/decompress', 'descomprimiendo');
+        }
+
+        async function processWithAPI(endpoint, action) {
+            showLoading(`${action} archivo...`);
+            
+            const formData = new FormData();
+            formData.append('file', currentFile);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                currentResult = blob;
+                
+                // Calcular estadísticas
+                const originalSize = currentFile.size;
+                const compressedSize = blob.size;
+                const ratio = originalSize / compressedSize;
+                const savings = ((originalSize - compressedSize) / originalSize) * 100;
+                
+                showResults(originalSize, compressedSize, ratio, savings, action);
+                
+            } catch (error) {
+                alert(`Error al ${action}: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loading.classList.add('show');
+            actions.style.display = 'none';
+        }
+
+        function hideLoading() {
+            loading.classList.remove('show');
+            actions.style.display = 'block';
+        }
+
+        function showResults(originalSize, compressedSize, ratio, savings, action) {
+            stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${ratio.toFixed(2)}:1</div>
+                    <div class="stat-label">Ratio de Compresión</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${formatFileSize(originalSize)}</div>
+                    <div class="stat-label">Tamaño Original</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${formatFileSize(compressedSize)}</div>
+                    <div class="stat-label">Tamaño Comprimido</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${savings.toFixed(1)}%</div>
+                    <div class="stat-label">Espacio Ahorrado</div>
+                </div>
+            `;
+            
+            progressBar.style.width = `${savings}%`;
+            results.classList.add('show');
+            
+            // Configurar botón de descarga
+            const extension = action === 'comprimiendo' ? '.dna' : '.fasta';
+            const prefix = action === 'comprimiendo' ? 'compressed_' : 'decompressed_';
+            downloadBtn.textContent = `⬇️ Descargar ${action === 'comprimiendo' ? 'Comprimido' : 'Descomprimido'}`;
+        }
+
+        function downloadResult() {
+            if (!currentResult) return;
+            
+            const url = URL.createObjectURL(currentResult);
+            const extension = isCompressed ? '.fasta' : '.dna';
+            const prefix = isCompressed ? 'decompressed_' : 'compressed_';
+            const filename = prefix + currentFile.name.replace(/\.[^/.]+$/, "") + extension;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function resetApp() {
+            currentFile = null;
+            currentResult = null;
+            fileInput.value = '';
+            actions.style.display = 'none';
+            results.classList.remove('show');
+            fileDetails.textContent = '';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
